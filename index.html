@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秘码</title>
+    <style>
+        html,body{
+            background: #f5f7fa;
+            font-size: 15px;
+        }
+        .item_wrap{
+            font-size: 40px;
+            box-shadow:2px 2px 5px #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .item_title{
+            margin: 0;
+            padding: 5px 15px;
+            background: #e9eefd;
+            border-radius: 4px 4px 0 0;
+        }
+        .item_delete{
+            float: right;
+            margin-top: 10px;
+        }
+        .item_time{
+            margin: 0;
+            text-align: right;
+            font-size: 20px;
+            color: #8f8f8f;
+            background: #ffffff;
+            padding-right: 15px;
+            padding-bottom: 5px;
+            border-radius: 0 0 4px 4px;
+        }
+        .item_content{
+            padding: 15px;
+            font-size: 30px;
+            background: #ffffff;
+        }
+        #add{
+            display: none;
+            margin-bottom: 15px;
+            margin-top: 10px;
+        }
+        #add span,#update span{
+            display: inline-block;
+            width: 50px;
+            margin: 5px;
+            text-align: right;
+        }
+        #update{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,.5);
+            display: none;
+            
+        }
+        .updateContent{
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            width: 60%;
+            background: #fff;
+            box-shadow:2px 2px 5px #ccc;
+            padding: 30px 20px 0px;
+            border-radius: 4px;
+        }
+        button{
+            color: #fff;
+            background: #3276f7;
+            border-radius: 4px;
+            padding: 7px 12px;
+            margin: 0 5px 5px;
+            outline: none;
+            border: 1px solid transparent;
+        }
+        input{
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #008cd6;
+            outline: none;
+            font-size: 15px;
+        }
+        input:active{
+            border-radius: 4px;
+            border: 1px solid #008cd6;
+        }
+        input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0px 1000px #fff inset !important;
+        }
+        #newIndex{
+            display: none;
+        }
+        .tc{
+            text-align: center;
+        }
+        .mb10{
+            margin-bottom: 10px;
+        }
+       
+    </style>
+</head>
+<body>
+    <button onclick="beforeAdd()" class="mb10">添加</button>
+       <div id="add">
+           <span>名称：</span><input id="title" type="text" /><br />
+           <span>值：</span><input id="content" type="text" /><br />  
+          
+            <button onclick="add()">确认</button>
+            <button onclick="afterAdd()">取消</button>
+             
+           
+       </div>
+       <div id="update">
+           <div class="updateContent">
+                <input type="text" id="newIndex" />
+                <span>名称：</span><input type = "text" id="newTitle" /><br />
+                <span>值：  </span><input type="text" id="newContent" /><br />
+                <p class="tc">
+                    <button onclick="submit()">确认</button>
+                    <button onclick="afterUpdate()">取消</button>
+                </p>
+               
+           </div>
+       
+       </div>
+    <div id="app">
+        <div class="item_wrap">
+            <p class="item_title">12121<button class="item_delete" onclick="dataDelete('+i+')">删除</button><button class="item_delete" onclick=\'beforeUpdate("'+i+'","'+res[i].title+'","'+res[i].content+'")\' >修改</button></p>
+            <div class="item_content">'+res[i].content+'</div>
+            <p class="item_time">'+res[i].time+'</p>
+        </div>
+    </div>
+  
+    <script>
+
+   
+       require( './node_modules/jquery/dist/jquery.min.js')
+       
+
+    
+        let fs = require("fs");
+        function getData(){
+            let data = fs.readFileSync('data.txt');
+            var res = JSON.parse(data); 
+            return res
+        }
+        function initData(){
+            var res = getData()
+           
+            var html = '';
+            if(res.length<1){
+                html += '<p class="tc">暂无数据</p>'               
+            }else{
+                for (var i=0;i<res.length;i++){
+                    html +=  '<div class="item_wrap">'+
+                        '<p class="item_title">'+res[i].title+'<button class="item_delete" onclick="dataDelete('+i+')">删除</button><button class="item_delete" onclick=\'beforeUpdate("'+i+'","'+res[i].title+'","'+res[i].content+'")\' >修改</button></p>'+
+                        '<div class="item_content">'+res[i].content+'</div>'+
+                        '<p class="item_time">'+res[i].time+'</p>'+
+                    '</div>'
+                }   
+            }
+            
+            var app = document.getElementById('app');
+            app.innerHTML = html
+            
+        }
+        initData()
+       
+       
+        function beforeAdd(){
+            document.getElementById('title').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('add').style.display = "block"
+        }
+        function afterAdd(){
+            document.getElementById('add').style.display = "none"
+        }
+        function add(){
+            
+            var title = document.getElementById('title').value;
+            var content = document.getElementById('content').value;
+            if(title.replace(/(^\s+)|(\s+$)/g,"") != '' && content.replace(/(^\s+)|(\s+$)/g,"") !=''){
+               
+                var time = getTime()
+                var res = getData();
+                res.unshift({
+                    "title":title,
+                    "content":content,
+                    "time":time
+                })
+                 // alert(JSON.stringify(res))
+                fs.writeFile('data.txt', JSON.stringify(res), function (error) {
+                    if (error) {
+                        alert('写入失败')
+                    }else{
+                        afterAdd()
+                        initData()
+                    }
+                })
+            }
+          
+          
+        }
+        function dataDelete(index){
+            var res = getData();
+            res.splice(index,1);
+            fs.writeFile('data.txt', JSON.stringify(res), function (error) {
+                if (error) {
+                    alert('写入失败')
+                }else{
+                    initData()
+                }
+            })
+
+        }
+        
+        function beforeUpdate(index,title,content){
+          
+            document.getElementById('newIndex').value = index;
+            document.getElementById('newTitle').value = title;
+            document.getElementById('newContent').value = content;
+            document.getElementById('update').style.display ='block'
+        }
+        function afterUpdate(){
+            document.getElementById('update').style.display ='none'
+        }
+        function submit(){
+            var index = document.getElementById('newIndex').value;
+            var title = document.getElementById('newTitle').value;
+            var content = document.getElementById('newContent').value;
+            if(title.replace(/(^\s+)|(\s+$)/g,"") !='' && content.replace(/(^\s+)|(\s+$)/g,"") != ''){
+               
+                var time = getTime()
+                var res = getData();
+                res[index].title = title
+                res[index].content = content
+                res[index].time = time
+                fs.writeFile('data.txt', JSON.stringify(res), function (error) {
+                    if (error) {
+                        alert('写入失败')
+                    }else{
+                        afterUpdate()
+                        initData()
+                    }
+                })
+            }
+          
+        }
+        function getTime(){
+            var d = new Date();
+            var year =  d.getFullYear();
+            var month = Number(Number(d.getMonth())+1)
+            if(month<10){
+                month = '0' + month
+            }
+            var day = d.getDate()
+            if(day<10){
+                day = '0' + day
+            }
+            var hour = d.getHours()
+            if(hour<10){
+                hour = '0' + hour
+            }
+            var minute = d.getMinutes()
+            if(minute <10){
+                minute = '0' + minute
+            }
+            var second = d.getSeconds()
+            if(second <10){
+                second = '0' + second
+            }
+            var time = year+ '-' + month + '-' + day +' ' +hour + ':' + minute + ':' + second
+            return time;
+                
+        }
+        
+    </script>
+</body>
+</html>
+
